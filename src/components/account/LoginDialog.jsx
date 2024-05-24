@@ -1,9 +1,13 @@
 import React from "react";
 import Dialog from "@mui/material/Dialog";
-import Box from "@mui/material/Box";
+import { Box } from "@mui/system";
+import { useContext } from "react";
+import { AccountContext } from "../context/AccountProvider";
 import { Typography, List, ListItem, styled } from "@mui/material";
 import { qrCodeImage } from "../../constants/data";
-import { GoogleOAuthProvider } from "@react-oauth/google";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+import { addUser } from "../../service/api";
 
 const Component = styled(Box)`
   display: flex;
@@ -14,8 +18,9 @@ const modifiedDialog = {
   marginTop: "12%",
   width: "60%",
   maxWidth: "100%",
+  maxHeight: "100%",
   boxShadow: "none",
-  overflow: "none",
+  overflow: "hidden",
 };
 
 const Container = styled(Box)`
@@ -25,7 +30,7 @@ const Container = styled(Box)`
 const QRCode = styled("img")({
   height: 264,
   width: 264,
-  margin: "50px 0 0 50px",
+  margin: "50px 0  0 50px",
 });
 
 const Title = styled(Typography)`
@@ -47,19 +52,39 @@ const ModifiedList = styled(List)`
 `;
 
 const LoginDialog = () => {
+  const { setAccount } = useContext(AccountContext);
+
+  const onLoginSuccess = async (res) => {
+    const decoded = jwtDecode(res.credential);
+    console.log(decoded);
+    setAccount(decoded);
+    await addUser(decoded);
+  };
+  const onLoginError = (res) => {
+    console.log(res);
+  };
   return (
-    <Dialog open={true} PaperProps={{ sx: modifiedDialog }}>
+    <Dialog open={true} PaperProps={{ sx: modifiedDialog }} hideBackdrop={true}>
       <Component>
         <Container>
-          <Title>To use Whatsapp on your Computer</Title>
+          <Title>To use WhatsApp on your computer:</Title>
           <ModifiedList>
             <ListItem>1. Open Whatsapp on your phone</ListItem>
             <ListItem>2. Tap Menu Settings on the phone</ListItem>
-            <ListItem>3. Tap linked devices and then link a device.</ListItem>
+            <ListItem>3. Tap Linked Devices and then link a device</ListItem>
           </ModifiedList>
         </Container>
-        <Box>
-          <QRCode src={qrCodeImage} alt="QR Code"></QRCode>
+        <Box style={{ position: "relative" }}>
+          <QRCode src={qrCodeImage} alt="QR Code" />
+          <Box
+            style={{
+              position: "absolute",
+              top: "50%",
+              transform: "translateX(25%)",
+            }}
+          >
+            <GoogleLogin onSuccess={onLoginSuccess} onError={onLoginError} />
+          </Box>
         </Box>
       </Component>
     </Dialog>
